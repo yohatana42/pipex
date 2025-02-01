@@ -1,34 +1,32 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   pipex.h                                            :+:      :+:    :+:   */
+/*   get_path.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/01/26 15:50:23 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/01 20:20:25 by yohatana         ###   ########.fr       */
+/*   Created: 2025/02/01 22:29:27 by yohatana          #+#    #+#             */
+/*   Updated: 2025/02/01 22:48:02 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-#include "./libft/libft.h"
-#include "./printf/libftprintf.h"
+#include"pipex.h"
 
-#define IN 0
-#define OUT 1
-
-typedef struct s_cmd
+char	**get_env_path(char **envp)
 {
-	char	*cmd1;
-	char	*cmd2;
-} t_cmd;
+	char	**path;
+	char	*temp;
+	int		i;
 
-typedef struct s_file
-{
-	char	*cmd1;
-	char	*cmd2;
-} t_file;
+	i = 0;
+	while (envp[i])
+	{
+		if (ft_strncmp(envp[i], "PATH=", 5) == 0)
+			break ;
+		i++;
+	}
+	temp = ft_strtrim(envp[i], "PATH=");
+	path = ft_split(temp, ':');
+	free(temp);
+	return (path);
+}
