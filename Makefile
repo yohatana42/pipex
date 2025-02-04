@@ -6,7 +6,7 @@
 #    By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/08 14:55:25 by yohatana          #+#    #+#              #
-#    Updated: 2025/02/01 22:48:10 by yohatana         ###   ########.fr        #
+#    Updated: 2025/02/04 17:53:16 by yohatana         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,8 @@ NAME		= pipex
 SRCS		=\
 				main.c\
 				validate_args.c\
-				get_env_path.c
+				get_env_path.c\
+				exec.c
 
 
 # object file name
