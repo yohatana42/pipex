@@ -6,19 +6,21 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 17:11:24 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/04 20:21:28 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/06 23:15:16 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include"pipex.h"
 
-// int		validate_args(char **argv, char **env_path);
-int		validate_args(char **argv);
-int		end_exec(void);
-char	**get_env_path(char **envp);
 
-// 実行可能なコマンドのパス
-// 環境変数パス（二重配列）
+/*
+	2/7やること
+	・構造体の作成
+	・構造体のフリー
+	・fork()のラッパー関数
+	・エラー用の関数の作成
+	・↑bashとの挙動の差を確認
+*/
 
 int	main(int argc, char **argv, char **envp)
 {
@@ -28,15 +30,15 @@ int	main(int argc, char **argv, char **envp)
 	int		new_pid_2;
 	int		status_1;
 	int		status_2;
-	(void)argv;
-	(void)env_path;
-	// t_cmd	*cmd;
 
 	status_1 = 0;
 	status_2 = 0;
 
 	if (argc == 5)
 	{
+		// 構造体の作成
+		// cmd = create_struct();
+
 		// 環境変数を分解する done!
 		env_path = get_env_path(envp);
 		if (!env_path)
@@ -50,12 +52,9 @@ int	main(int argc, char **argv, char **envp)
 		// 	i++;
 		// }
 
-		// 構造体の作成
-		// cmd = create_struct();
 
 		// 引数のチェック ファイル名だけならdone
 		validate_args(argv);
-		// データの格納（ファイルのread）
 
 		// パイプを作成
 		if (pipe(pipe_fd) != 0)
@@ -65,12 +64,23 @@ int	main(int argc, char **argv, char **envp)
 
 		// 子プロセスを作る
 		new_pid_1 = fork();
-		if (new_pid_1 != 0)
+		if (new_pid_1 < 0)
+			error_pipex();
+		else if (new_pid_1 != 0)
+		{
 			new_pid_2 = fork();
+			if (new_pid_2 < 0)
+				error_pipex();
+		}
+
+		// 子プロセスのpidを構造体にセット
+
+		// 子プロセスの実行or親プロセスの待機（pipe()の容量を超えたときに注意）
 		if (new_pid_1 == 0 || new_pid_2 == 0)
 		{
 			printf("im child pid:%d\n", getpid());
-			exec(argv, env_path);
+		// ここで環境パスとかやる
+			exec(argv, env_path, new_pid_1, new_pid_2, pipe_fd);
 		}
 		else
 		{
@@ -79,17 +89,8 @@ int	main(int argc, char **argv, char **envp)
 			waitpid(new_pid_2, &status_2, 0);
 			printf("status_1 %d status_2 %d\n", status_1, status_2);
 		}
-
-		// 子プロセスの実行or親プロセスの待機（pipe()の容量を超えたときに注意）
-		// ここで環境パスとかやる
-
-		// 子プロセスの終了
-
 		// 終了処理
-		free_env_path(env_path);
-		close(pipe_fd[0]);
-		close(pipe_fd[1]);
-		end_exec();
+		end_exec(env_path, pipe_fd);
 	}
 	else
 		perror("the number of pipex arguments is 4");
@@ -110,10 +111,12 @@ int	main(int argc, char **argv, char **envp)
 // close(0)のあとに再度stdinを開けるか
 
 // 終了処理
-int	end_exec(void)
+int	end_exec(char **env_path, int *pipe_fd)
 {
-	// free(buffer)
-	// close(fd)
+	// 構造体のfree
+	free_env_path(env_path);
+	close(pipe_fd[0]);
+	close(pipe_fd[1]);
 	return (0);
 }
 
@@ -128,3 +131,10 @@ int	end_exec(void)
 // 	cmd->cmd2 = NULL;
 // 	return (cmd);
 // }
+
+void	error_pipex(void)
+{
+	// strerror(errno);
+	// perror(strerror(errno));
+	exit (errno);
+}
