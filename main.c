@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 17:11:24 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/06 23:15:16 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/08 14:44:40 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,77 +20,79 @@
 	・fork()のラッパー関数
 	・エラー用の関数の作成
 	・↑bashとの挙動の差を確認
+	・errnoと終了ステータスは別
+		errnoはシステムコールのエラーを検知する
 */
 
 int	main(int argc, char **argv, char **envp)
 {
-	char	**env_path;
-	int		pipe_fd[2];
-	int		new_pid_1;
-	int		new_pid_2;
-	int		status_1;
-	int		status_2;
-
-	status_1 = 0;
-	status_2 = 0;
+	char			**env_path;
+	// t_proc			**proc;
+	// int				pipe_fd[2];
+	t_pipex_data	*data;
 
 	if (argc == 5)
 	{
-		// 構造体の作成
-		// cmd = create_struct();
 
 		// 環境変数を分解する done!
 		env_path = get_env_path(envp);
 		if (!env_path)
 			perror("env path can not get");
 
-		// /* デバッグ用 */
-		// int i = 0;
-		// while (env_path[i])
-		// {
-		// 	printf("env_path[i] %s\n", env_path[i]);
-		// 	i++;
-		// }
-
-
 		// 引数のチェック ファイル名だけならdone
-		validate_args(argv);
+		if (validate_args(argv))
+		{
+			free_env_path(env_path);
+			exit(1);
+		}
+
+		// 構造体の作成
+		data = create_pipex_data_struct(argc, argv);
+		if (!data)
+			error_pipex(data);
+		data_set_to_struct(argc, argv, data, env_path);
 
 		// パイプを作成
-		if (pipe(pipe_fd) != 0)
-			perror("pipe failed");
-		printf("pipe_fd[0] %d\n", pipe_fd[0]);
-		printf("pipe_fd[1] %d\n", pipe_fd[1]);
+		/*
+			失敗時
+			yohatana@c6r2s5:~$ ulimit -n 1; ls | cat
+			bash: pipe error: Too many open files
+			bash: start_pipeline: pgrp pipe: Too many open files
+		*/
+		if (pipe(data->pipe_fd) < 0)
+			error_pipex(data);
 
-		// 子プロセスを作る
-		new_pid_1 = fork();
-		if (new_pid_1 < 0)
-			error_pipex();
-		else if (new_pid_1 != 0)
-		{
-			new_pid_2 = fork();
-			if (new_pid_2 < 0)
-				error_pipex();
-		}
+		// // 子プロセスを作る
+		make_process(data);
+		// //=============　ここまでOK　===================
 
-		// 子プロセスのpidを構造体にセット
+		/*
+			プロセスが指定した数つくれてるか
+			デバッグ用
+		*/
+		printf("get_pid %d\n", getpid());
 
 		// 子プロセスの実行or親プロセスの待機（pipe()の容量を超えたときに注意）
-		if (new_pid_1 == 0 || new_pid_2 == 0)
+		int	i;
+		i = 0;
+		while (data->proc[i])
 		{
-			printf("im child pid:%d\n", getpid());
-		// ここで環境パスとかやる
-			exec(argv, env_path, new_pid_1, new_pid_2, pipe_fd);
+			printf("====exec start====\n");
+			if (data->proc[i]->pid == 0)
+			{
+				printf("get_pid %d\n", getpid());
+				exec(data, i);
+				i++;
+			}
+			else
+			{
+				waitpid(data->proc[i]->pid, &data->proc[i]->status, 0);
+				break ;
+			}
 		}
-		else
-		{
-			printf("im parent\n");
-			waitpid(new_pid_1, &status_1, 0);
-			waitpid(new_pid_2, &status_2, 0);
-			printf("status_1 %d status_2 %d\n", status_1, status_2);
-		}
+
 		// 終了処理
-		end_exec(env_path, pipe_fd);
+		end_exec(data);
 	}
 	else
 		perror("the number of pipex arguments is 4");
@@ -110,31 +112,66 @@ int	main(int argc, char **argv, char **envp)
 
 // close(0)のあとに再度stdinを開けるか
 
-// 終了処理
-int	end_exec(char **env_path, int *pipe_fd)
+void	make_process(t_pipex_data *data)
 {
-	// 構造体のfree
-	free_env_path(env_path);
-	close(pipe_fd[0]);
-	close(pipe_fd[1]);
+	// 子プロセスを作る
+	// マンダトリーだけなら決め打ちしてもいいけども
+	int	i;
+
+	i = 0;
+	while (data->proc[i])
+	{
+		data->proc[i]->pid = fork();
+		if (data->proc[i]->pid < 0)
+			error_pipex(data);
+		else if (data->proc[i]->pid != 0)
+			i++;
+		else
+			break ;
+	}
+}
+
+// 終了処理
+int	end_exec(t_pipex_data *data)
+{
+	close(data->pipe_fd[0]);
+	close(data->pipe_fd[1]);
+	free_pipex_data(data);
 	return (0);
 }
 
-// t_cmd	*create_struct(void)
-// {
-// 	t_cmd	*cmd;
-
-// 	cmd = (t_cmd *)ft_calloc(sizeof(t_cmd), 1);
-// 	if (!cmd)
-// 		return (NULL);
-// 	cmd->cmd1 = NULL;
-// 	cmd->cmd2 = NULL;
-// 	return (cmd);
-// }
-
-void	error_pipex(void)
+// error_exit()のほうがいいかも　最終的にどうなるかわかるから
+void	error_pipex(t_pipex_data *data)
 {
-	// strerror(errno);
-	// perror(strerror(errno));
+	// エラーメッセージを吐くだけのときもあるので分けたほうが楽かも
+	// error_message()
+	perror(strerror(errno));
+	free_pipex_data(data);
 	exit (errno);
+}
+
+void	data_set_to_struct(int argc, \
+						char **argv, \
+						t_pipex_data *data, \
+						char **env_path)
+{
+	int	i;
+	int	j;
+
+	i = 0;
+	j = 2;
+	while (data->proc[i])
+	{
+		data->proc[i]->cmd = ft_strdup(argv[j]);
+		if (!data->proc[i]->cmd)
+		{
+			error_pipex(data);
+		}
+		i++;
+		j++;
+	}
+	data->infile = argv[0];
+	data->outfile = argv[argc - 1];
+	data->cmd_count = argc - 3;
+	data->env_path = env_path;
 }

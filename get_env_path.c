@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 22:29:27 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/03 20:31:18 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/08 13:56:27 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,13 +38,14 @@ char	**get_env_path(char **envp)
 		free(temp);
 		return (NULL);
 	}
+	free(temp);
 	env_path = add_slash(path);
 	if (!env_path)
 		free_path(path);
-	free(temp);
 	return (env_path);
 }
 
+// returnの変数を変えるべき?
 static char	**add_slash(char **path)
 {
 	int		i;
@@ -53,6 +54,8 @@ static char	**add_slash(char **path)
 	i = 0;
 	while (path[i])
 	{
+		printf("path[i] %s\n", path[i]);
+		// leak
 		post_path = ft_strjoin(path[i], "/");
 		if (!post_path)
 			return (NULL);
