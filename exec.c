@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/03 22:51:03 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/08 14:45:36 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/08 14:58:55 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,15 +42,19 @@ void	exec(t_pipex_data *data, int num)
 	{
 		in_file_fd = open(data->infile, O_RDONLY);
 		close(STD_IN);
-		dup2(in_file_fd, STD_IN);
 		close(data->pipe_fd[IN]);
+		dup2(in_file_fd, STD_IN);
+		close(STD_OUT);
 		dup2(data->pipe_fd[OUT], STD_OUT);
 	}
 	else if (num == data->cmd_count)
 	{
 		// read(pipe_fd[IN], , 100);
+		close(STD_IN);
+		close(data->pipe_fd[OUT]);
 		dup2(data->pipe_fd[IN], STD_IN);
 		out_file_fd = open(data->outfile, O_WRONLY);
+		close(STD_OUT);
 		dup2(out_file_fd, STD_OUT);
 		// 最後のコマンドはstdoutに出力する
 	}

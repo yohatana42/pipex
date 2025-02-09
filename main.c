@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 17:11:24 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/08 14:44:40 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/09 15:52:31 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,13 +81,14 @@ int	main(int argc, char **argv, char **envp)
 			if (data->proc[i]->pid == 0)
 			{
 				printf("get_pid %d\n", getpid());
+				printf("data->proc[i]->pid %d\n", data->proc[i]->pid);
 				exec(data, i);
 				i++;
 			}
 			else
 			{
 				waitpid(data->proc[i]->pid, &data->proc[i]->status, 0);
-				break ;
+				i++;
 			}
 		}
 
@@ -147,6 +148,8 @@ void	error_pipex(t_pipex_data *data)
 	// error_message()
 	perror(strerror(errno));
 	free_pipex_data(data);
+	close(data->pipe_fd[IN]);
+	close(data->pipe_fd[OUT]);
 	exit (errno);
 }
 
