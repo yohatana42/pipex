@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/03 22:51:03 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/18 14:17:27 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/18 17:59:03 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 static char	*create_cmd_path(t_proc *proc, t_pipex_data *data);
 static char	*option_trim(char *cmd);
 static char	**create_cmd_args(t_pipex_data *data, int num);
+
 
 // void	exec(t_pipex_data *data, int num)
 void	exec(t_pipex_data *data, int num, t_fds fds)
@@ -29,11 +30,14 @@ void	exec(t_pipex_data *data, int num, t_fds fds)
 	/*
 	fdを変更する(pidによって出力先を変える)
 	*/
+// otsubo info オブジェファイル読み込んでるっぽいのでこの辺が怪しい
 	int	fd;
 	if (num == 0)
 	{
 		close(fds.pipe[0]);
 		fd = dup2(fds.in_file, STDIN_FILENO);
+		if (fd < 0)
+			error_pipex(data);
 		fd = dup2(fds.pipe[1], STDOUT_FILENO);
 		close(fds.pipe[1]);
 	}
@@ -48,7 +52,6 @@ void	exec(t_pipex_data *data, int num, t_fds fds)
 	// コマンドの引数を作る
 	cmd_args = create_cmd_args(data, num);
 
-	dprintf(STDERR_FILENO, "EXECVE rdy\n");
 	// 実行
 	execve(cmd_path, cmd_args, NULL);
 }

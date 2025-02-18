@@ -6,15 +6,29 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/07 15:16:25 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/18 14:08:09 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/18 18:10:39 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include"pipex.h"
 
-static void	free_path(char **path);
+static void		free_path(char **path);
+static t_proc	**create_proc_struct(int argc);
 
-t_proc	**create_struct(int argc)
+t_pipex_data	*create_pipex_data_struct(int argc)
+{
+	t_pipex_data	*data;
+
+	data = (t_pipex_data *)ft_calloc(sizeof(t_pipex_data), 1);
+	if (!data)
+		return (NULL);
+	data->env_path = NULL;
+	data->cmd_count = 0;
+	data->proc = create_proc_struct(argc);
+	return (data);
+}
+
+static t_proc	**create_proc_struct(int argc)
 {
 	t_proc	**proc;
 	int		process_count;
@@ -39,36 +53,9 @@ t_proc	**create_struct(int argc)
 		i++;
 	}
 	proc[i] = NULL;
-	printf("i %d\n", i);
 	return (proc);
 }
 
-// t_pipex_data	*create_pipex_data_struct(int argc, char **argv)
-// {
-// 	t_pipex_data	*data;
-// 	(void)argv;
-
-// 	data = (t_pipex_data *)ft_calloc(sizeof(t_pipex_data), 1);
-// 	if (!data)
-// 		return (NULL);
-// 	data->env_path = NULL;
-// 	data->cmd_count = 0;
-// 	data->proc = create_struct(argc);
-// 	return (data);
-// }
-
-t_pipex_data	*create_pipex_data_struct(int argc)
-{
-	t_pipex_data	*data;
-
-	data = (t_pipex_data *)ft_calloc(sizeof(t_pipex_data), 1);
-	if (!data)
-		return (NULL);
-	data->env_path = NULL;
-	data->cmd_count = 0;
-	data->proc = create_struct(argc);
-	return (data);
-}
 
 void	free_pipex_data(t_pipex_data *data)
 {

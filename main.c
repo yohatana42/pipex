@@ -6,21 +6,22 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 17:11:24 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/18 14:22:20 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/18 18:15:28 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include"pipex.h"
 
 // TODO
-// 子プロセスでしか使わないものは親で宣言しない
-// 多分これで一部のリークが消える　
+// exit status
+// error message
 
 int	main(int argc, char **argv, char **envp)
 {
 	char			**env_path;
 	t_pipex_data	*data;
 	t_fds			fds;
+	int				exit_status;
 
 	if (argc == 5)
 	{
@@ -49,24 +50,20 @@ int	main(int argc, char **argv, char **envp)
 		if (fds.out_file < 0)
 			error_pipex(data);
 		// パイプを作成
-		/*
-			失敗時
-			yohatana@c6r2s5:~$ ulimit -n 1; ls | cat
-			bash: pipe error: Too many open files
-			bash: start_pipeline: pgrp pipe: Too many open files
-		*/
 		if (pipe(fds.pipe) < 0)
 			error_pipex(data);
 
 		// 子プロセスを作る
 		make_process(data, fds);
 
+		exit_status = WEXITSTATUS(data->proc[1]->status);
+
 		// 終了処理
 		end_exec(data);
 		close_fds(fds);
 		// freeした後にdataを参照しているからinvalid readしていた！
 		// return (WEXITSTATUS(data->proc[1]->status));
-		return (0);
+		return (exit_status);
 	}
 	else
 		perror("the number of pipex arguments is 4");
@@ -175,9 +172,12 @@ void	end_exec(t_pipex_data *data)
 // error_exit()のほうがいいかも　最終的にどうなるかわかるから
 void	error_pipex(t_pipex_data *data)
 {
+	int exit_status;
+
 	// エラーメッセージを吐くだけのときもあるので分けたほうが楽かも
 	// error_message()
 	perror(strerror(errno));
+	exit_status = WEXITSTATUS(data->proc[1]->status);
 	free_pipex_data(data);
 	close(0);
 	close(1);
