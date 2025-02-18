@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/07 15:16:25 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/08 14:45:19 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/18 14:08:09 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,38 +27,44 @@ t_proc	**create_struct(int argc)
 	i = 0;
 	while (i < process_count)
 	{
-		printf("i %d process_count %d\n", i, process_count);
 		proc[i] = (t_proc *)ft_calloc(sizeof(t_proc), 1);
 		if (!proc[i])
 		{
-			free_proc(proc);
+			free_proc(proc, process_count);
 			return (NULL);
 		}
 		proc[i]->pid = 0;
 		proc[i]->status = 0;
-		// commandようの構造体にすべき？
 		proc[i]->cmd = NULL;
-		proc[i]->cmd_path = NULL;
-		proc[i]->cmd_args = NULL;
 		i++;
 	}
 	proc[i] = NULL;
+	printf("i %d\n", i);
 	return (proc);
 }
 
-t_pipex_data	*create_pipex_data_struct(int argc, char **argv)
+// t_pipex_data	*create_pipex_data_struct(int argc, char **argv)
+// {
+// 	t_pipex_data	*data;
+// 	(void)argv;
+
+// 	data = (t_pipex_data *)ft_calloc(sizeof(t_pipex_data), 1);
+// 	if (!data)
+// 		return (NULL);
+// 	data->env_path = NULL;
+// 	data->cmd_count = 0;
+// 	data->proc = create_struct(argc);
+// 	return (data);
+// }
+
+t_pipex_data	*create_pipex_data_struct(int argc)
 {
 	t_pipex_data	*data;
-	(void)argv;
 
 	data = (t_pipex_data *)ft_calloc(sizeof(t_pipex_data), 1);
 	if (!data)
 		return (NULL);
 	data->env_path = NULL;
-	data->pipe_fd[0] = 0;
-	data->pipe_fd[1] = 0;
-	data->infile = NULL;
-	data->outfile = NULL;
 	data->cmd_count = 0;
 	data->proc = create_struct(argc);
 	return (data);
@@ -68,35 +74,21 @@ void	free_pipex_data(t_pipex_data *data)
 {
 	if (!data)
 		return ;
-	free_proc(data->proc);
+	free_proc(data->proc, data->cmd_count);
 	free_path(data->env_path);
-	// free(data->infile);
-	// free(data->outfile);
 	free(data);
 }
 
-void	free_proc(t_proc **proc)
+void	free_proc(t_proc **proc, int process_count)
 {
 	int	i;
-	int	j;
 
 	if (!proc)
 		return ;
 	i = 0;
-	while (proc[i])
+	while (i < process_count)
 	{
 		free(proc[i]->cmd);
-		free(proc[i]->cmd_path);
-		if (proc[i]->cmd_args)
-		{
-			j = 0;
-			while (proc[i]->cmd_args[j])
-			{
-				free(proc[i]->cmd_args[j]);
-				j++;
-			}
-		}
-		free(proc[i]->cmd_args);
 		free(proc[i]);
 		i++;
 	}

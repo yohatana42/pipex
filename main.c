@@ -6,39 +6,28 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 17:11:24 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/09 15:52:31 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/18 14:22:20 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include"pipex.h"
 
-
-/*
-	2/7やること
-	・構造体の作成
-	・構造体のフリー
-	・fork()のラッパー関数
-	・エラー用の関数の作成
-	・↑bashとの挙動の差を確認
-	・errnoと終了ステータスは別
-		errnoはシステムコールのエラーを検知する
-*/
+// TODO
+// 子プロセスでしか使わないものは親で宣言しない
+// 多分これで一部のリークが消える　
 
 int	main(int argc, char **argv, char **envp)
 {
 	char			**env_path;
-	// t_proc			**proc;
-	// int				pipe_fd[2];
 	t_pipex_data	*data;
+	t_fds			fds;
 
 	if (argc == 5)
 	{
-
 		// 環境変数を分解する done!
 		env_path = get_env_path(envp);
 		if (!env_path)
 			perror("env path can not get");
-
 		// 引数のチェック ファイル名だけならdone
 		if (validate_args(argv))
 		{
@@ -47,11 +36,18 @@ int	main(int argc, char **argv, char **envp)
 		}
 
 		// 構造体の作成
-		data = create_pipex_data_struct(argc, argv);
+		data = create_pipex_data_struct(argc);
 		if (!data)
 			error_pipex(data);
 		data_set_to_struct(argc, argv, data, env_path);
 
+		// fdの設定
+		fds.in_file = open(argv[0], O_RDONLY);
+		if (fds.in_file < 0)
+			error_pipex(data);
+		fds.out_file = open(argv[argc - 1], O_WRONLY);
+		if (fds.out_file < 0)
+			error_pipex(data);
 		// パイプを作成
 		/*
 			失敗時
@@ -59,45 +55,30 @@ int	main(int argc, char **argv, char **envp)
 			bash: pipe error: Too many open files
 			bash: start_pipeline: pgrp pipe: Too many open files
 		*/
-		if (pipe(data->pipe_fd) < 0)
+		if (pipe(fds.pipe) < 0)
 			error_pipex(data);
 
-		// // 子プロセスを作る
-		make_process(data);
-		// //=============　ここまでOK　===================
-
-		/*
-			プロセスが指定した数つくれてるか
-			デバッグ用
-		*/
-		printf("get_pid %d\n", getpid());
-
-		// 子プロセスの実行or親プロセスの待機（pipe()の容量を超えたときに注意）
-		int	i;
-		i = 0;
-		while (data->proc[i])
-		{
-			printf("====exec start====\n");
-			if (data->proc[i]->pid == 0)
-			{
-				printf("get_pid %d\n", getpid());
-				printf("data->proc[i]->pid %d\n", data->proc[i]->pid);
-				exec(data, i);
-				i++;
-			}
-			else
-			{
-				waitpid(data->proc[i]->pid, &data->proc[i]->status, 0);
-				i++;
-			}
-		}
+		// 子プロセスを作る
+		make_process(data, fds);
 
 		// 終了処理
 		end_exec(data);
+		close_fds(fds);
+		// freeした後にdataを参照しているからinvalid readしていた！
+		// return (WEXITSTATUS(data->proc[1]->status));
+		return (0);
 	}
 	else
 		perror("the number of pipex arguments is 4");
 	return (0);
+}
+
+void	close_fds(t_fds fds)
+{
+	close(fds.in_file);
+	close(fds.out_file);
+	close(fds.pipe[0]);
+	close(fds.pipe[1]);
 }
 
 // unlink()はヒアドク>>の容量を超えたときに使う（ディフェンス次第だけど軽いのでやったほうがいいかも）
@@ -113,32 +94,82 @@ int	main(int argc, char **argv, char **envp)
 
 // close(0)のあとに再度stdinを開けるか
 
-void	make_process(t_pipex_data *data)
+
+// 本当に悲しいことだけどこれが一番正しく動いている
+void	make_process(t_pipex_data *data, t_fds fds)
 {
-	// 子プロセスを作る
-	// マンダトリーだけなら決め打ちしてもいいけども
 	int	i;
+	int	pid1;
+	int	pid2;
+	(void)fds;
 
 	i = 0;
-	while (data->proc[i])
+	pid1 = 0;
+	pid2 = 0;
+	pid1 = fork();
+	if (pid1 < 0)
+		error_pipex(data);
+	else if (pid1 != 0)
 	{
-		data->proc[i]->pid = fork();
-		if (data->proc[i]->pid < 0)
+		pid2 = fork();
+		if (pid2 < 0)
 			error_pipex(data);
-		else if (data->proc[i]->pid != 0)
-			i++;
-		else
-			break ;
 	}
+	data->proc[0]->pid = pid1;
+	data->proc[1]->pid = pid2;
+
+	// 親のpipefdは閉じる
+	if (pid1 != 0 && pid2 != 0)
+	{
+		close(fds.pipe[0]);
+		close(fds.pipe[1]);
+	}
+	// execveしたら子プロセスは死ぬ
+	if (pid1 == 0)
+		exec(data, 0, fds);
+	else if (pid2 == 0)
+		exec(data, 1, fds);
+	// waitの位置確認
+	waitpid(pid2, &data->proc[1]->status, 0);
+	waitpid(pid1, &data->proc[0]->status, 0);
 }
 
+// 一度に存在する子プロセスは常に一つになるようにする　ー＞うそ
+// すべての子プロセスのexecve()が始まろうが終わろうがwait()する
+	// 途中の子プロセスに膨大な処理時間が経過しても問題ないようにする
+// 子プロセスが死ぬことでアクセスできないfdが存在しないように注意
+// void	make_process(t_pipex_data *data, t_fds fds)
+// {
+// 	int	i;
+// 	int	pid;
+// 	int	last_pid;
+
+// 	i = 0;
+// 	while (i < data->cmd_count)
+// 	{
+// 		pid = fork();
+// 		if (pid < 0)
+// 			error_pipex(data);
+// 		if (pid == 0)
+// 			exec(data, i);
+// 		else
+// 		{
+// 			// 親はパイプのfdの入口を閉じる
+// 			close(fds.pipe[i]);
+// 		}
+// 		if (i == data->cmd_count - 1)
+// 			last_pid = pid;
+// 		i++;
+// 	}
+// 	// pipe_fdをcloseで閉じる（子プロセスが入力待ち続けてしまうので）
+// 	waitpid(last_pid, &data->proc[1]->status, 0);
+// 	wait(0);
+// }
+
 // 終了処理
-int	end_exec(t_pipex_data *data)
+void	end_exec(t_pipex_data *data)
 {
-	close(data->pipe_fd[0]);
-	close(data->pipe_fd[1]);
 	free_pipex_data(data);
-	return (0);
 }
 
 // error_exit()のほうがいいかも　最終的にどうなるかわかるから
@@ -148,33 +179,7 @@ void	error_pipex(t_pipex_data *data)
 	// error_message()
 	perror(strerror(errno));
 	free_pipex_data(data);
-	close(data->pipe_fd[IN]);
-	close(data->pipe_fd[OUT]);
+	close(0);
+	close(1);
 	exit (errno);
-}
-
-void	data_set_to_struct(int argc, \
-						char **argv, \
-						t_pipex_data *data, \
-						char **env_path)
-{
-	int	i;
-	int	j;
-
-	i = 0;
-	j = 2;
-	while (data->proc[i])
-	{
-		data->proc[i]->cmd = ft_strdup(argv[j]);
-		if (!data->proc[i]->cmd)
-		{
-			error_pipex(data);
-		}
-		i++;
-		j++;
-	}
-	data->infile = argv[0];
-	data->outfile = argv[argc - 1];
-	data->cmd_count = argc - 3;
-	data->env_path = env_path;
 }

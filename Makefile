@@ -6,7 +6,7 @@
 #    By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/08 14:55:25 by yohatana          #+#    #+#              #
-#    Updated: 2025/02/07 15:44:16 by yohatana         ###   ########.fr        #
+#    Updated: 2025/02/17 19:12:02 by yohatana         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -19,7 +19,8 @@ SRCS		=\
 				validate_args.c\
 				get_env_path.c\
 				exec.c\
-				create_struct.c
+				create_struct.c\
+				data_set_to_struct.c
 
 
 # object file name
@@ -28,6 +29,7 @@ OBJS		= $(SRCS:.c=.o)
 # compile flag
 CC			= cc
 CCFLAGS		= -Wall -Wextra -Werror
+# CCFLAGS		+= -fsanitize=address
 
 # Archive and remove command
 AR			= ar rcs
@@ -51,7 +53,7 @@ $(PRINTF)/libftprintf.a:
 		$(CC) $(CCFLAGS) -I$(LIBFT) -I$(PRINTF) -c $< -o $@
 
 ${NAME}:	${OBJS} $(PRINTF)/libftprintf.a $(LIBFT)/libft.a
-			$(CC) ${OBJS} -L$(LIBFT) -lft -L$(PRINTF) -lftprintf -o $(NAME)
+			$(CC) $(CCFLAGS) ${OBJS} -L$(LIBFT) -lft -L$(PRINTF) -lftprintf -o $(NAME)
 
 clean:
 			make -C $(PRINTF) clean

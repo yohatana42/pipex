@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 22:29:27 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/08 13:56:27 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/12 16:18:54 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,8 +54,6 @@ static char	**add_slash(char **path)
 	i = 0;
 	while (path[i])
 	{
-		printf("path[i] %s\n", path[i]);
-		// leak
 		post_path = ft_strjoin(path[i], "/");
 		if (!post_path)
 			return (NULL);
