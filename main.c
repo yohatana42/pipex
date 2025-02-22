@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 17:11:24 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/18 18:15:28 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/22 20:29:58 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,10 +43,10 @@ int	main(int argc, char **argv, char **envp)
 		data_set_to_struct(argc, argv, data, env_path);
 
 		// fdの設定
-		fds.in_file = open(argv[0], O_RDONLY);
+		fds.in_file = open(argv[1], O_RDONLY);
 		if (fds.in_file < 0)
 			error_pipex(data);
-		fds.out_file = open(argv[argc - 1], O_WRONLY);
+		fds.out_file = open(argv[argc - 1], O_WRONLY | O_TRUNC | O_CREAT, PLIVILEGE);
 		if (fds.out_file < 0)
 			error_pipex(data);
 		// パイプを作成
@@ -74,8 +74,6 @@ void	close_fds(t_fds fds)
 {
 	close(fds.in_file);
 	close(fds.out_file);
-	close(fds.pipe[0]);
-	close(fds.pipe[1]);
 }
 
 // unlink()はヒアドク>>の容量を超えたときに使う（ディフェンス次第だけど軽いのでやったほうがいいかも）
@@ -123,9 +121,9 @@ void	make_process(t_pipex_data *data, t_fds fds)
 	}
 	// execveしたら子プロセスは死ぬ
 	if (pid1 == 0)
-		exec(data, 0, fds);
+		exec(data, 0, &fds);
 	else if (pid2 == 0)
-		exec(data, 1, fds);
+		exec(data, 1, &fds);
 	// waitの位置確認
 	waitpid(pid2, &data->proc[1]->status, 0);
 	waitpid(pid1, &data->proc[0]->status, 0);
@@ -179,7 +177,5 @@ void	error_pipex(t_pipex_data *data)
 	perror(strerror(errno));
 	exit_status = WEXITSTATUS(data->proc[1]->status);
 	free_pipex_data(data);
-	close(0);
-	close(1);
 	exit (errno);
 }

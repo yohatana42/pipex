@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/08 15:22:19 by yohatana          #+#    #+#             */
-/*   Updated: 2025/01/29 14:24:48 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/22 20:20:39 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ char	**ft_split(char const *s, char c)
 	answer = word_split(result, s, c, count_w);
 	if (answer == 0)
 		result_free(result);
+	result[count_w] = NULL;
 	return (result);
 }
 
