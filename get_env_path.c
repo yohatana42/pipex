@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 22:29:27 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/12 16:18:54 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/23 15:24:03 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,6 @@ char	**get_env_path(char **envp)
 	return (env_path);
 }
 
-// returnの変数を変えるべき?
 static char	**add_slash(char **path)
 {
 	int		i;

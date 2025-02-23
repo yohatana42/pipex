@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/07 15:16:25 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/18 18:10:39 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/23 15:23:27 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,6 @@ static t_proc	**create_proc_struct(int argc)
 	proc[i] = NULL;
 	return (proc);
 }
-
 
 void	free_pipex_data(t_pipex_data *data)
 {

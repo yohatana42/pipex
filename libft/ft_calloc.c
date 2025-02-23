@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/01 11:09:34 by yohatana          #+#    #+#             */
-/*   Updated: 2025/01/26 16:01:30 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/23 15:24:23 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 void	*ft_calloc(size_t count, size_t size)
 {
 	void	*result;
+
 	if ((count != 0 && SIZE_MAX / count < size)
 		|| (size != 0 && SIZE_MAX / size < count))
 		return (NULL);

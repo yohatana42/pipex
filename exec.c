@@ -6,92 +6,25 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/03 22:51:03 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/22 20:26:57 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/23 15:19:45 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-// static void	create_cmd_path(t_proc *proc, t_pipex_data *data);
 static char	*create_cmd_path(t_proc *proc, t_pipex_data *data);
 static char	*option_trim(char *cmd);
 static char	**create_cmd_args(t_pipex_data *data, int num);
+static void	change_fds(t_pipex_data *data, t_fds *fds, int num);
 
-
-// void	exec(t_pipex_data *data, int num)
 void	exec(t_pipex_data *data, int num, t_fds *fds)
 {
 	char	*cmd_path;
 	char	**cmd_args;
 
-	// コマンドのフルパスを作る
 	cmd_path = create_cmd_path(data->proc[num], data);
-	// コマンドの引数を作る
 	cmd_args = create_cmd_args(data, num);
-
-	/*
-	fdを変更する(pidによって出力先を変える)
-
-	何を閉じるかの整理が出来ていない説
-	・stdin
-	・stdout
-	・stderror
-
-	// 使い終わったら閉じる
-	・infile
-	・outfile
-	・pipe[0]
-	・pipe[1]
-	*/
-
-	/*
-	// stdin stdout を保管しておく必要がある？
-	int fd_stdin = dup(STDIN_FILENO);
-	int fd_stdout = dup(STDOUT_FILENO);
-	printf("stdin %d stdout %d\n", fd_stdin, fd_stdout);
-	*/
-	int	fd = 0;
-	if (num == 0)
-	{
-		// 絶対使わないものを閉じる
-		close(fds->pipe[0]);
-		close(fds->out_file);
-
-		// 終わったら閉じていく
-		fd = dup2(fds->in_file, STDIN_FILENO);
-		close(fds->in_file);
-		if (fd < 0)
-			error_pipex(data);
-		fd = dup2(fds->pipe[1], STDOUT_FILENO);
-		close(fds->pipe[1]);
-	}
-	else if (num == data->cmd_count -1)
-	{
-		// 絶対使わないものを閉じる
-		close(fds->in_file);
-		close(fds->pipe[1]);
-
-		// 終わったら閉じていく
-		fd = dup2(fds->pipe[0], STDIN_FILENO);
-		close(fds->pipe[0]);
-		fd = dup2(fds->out_file, STDOUT_FILENO);
-		close(fds->out_file);
-	}
-
-	/*
-		状況整理
-		・存在しないoutfileが作成される->OK
-			infile ls date nothing
-		・存在するoutfileに書き込みがされる->OK
-			infile ls date new
-		・２個目のコマンドの内容が書かれる->OK
-		・1個目のコマンドの内容が２個目のコマンドに流れている->
-			infile ls "wc -l" new ->OK
-			infile "cat" "cat" new ->NG
-	*/
-
-
-	// 実行
+	change_fds(data, fds, num);
 	if (execve(cmd_path, cmd_args, NULL) == -1)
 		error_pipex(data);
 }
@@ -106,16 +39,38 @@ static char	**create_cmd_args(t_pipex_data *data, int num)
 	return (cmd_args);
 }
 
+static void	change_fds(t_pipex_data *data, t_fds *fds, int num)
+{
+	int	fd;
+
+	fd = 0;
+	if (num == 0)
+	{
+		close(fds->pipe[0]);
+		close(fds->out_file);
+		fd = dup2(fds->in_file, STDIN_FILENO);
+		close(fds->in_file);
+		if (fd < 0)
+			error_pipex(data);
+		fd = dup2(fds->pipe[1], STDOUT_FILENO);
+		close(fds->pipe[1]);
+	}
+	else if (num == data->cmd_count -1)
+	{
+		close(fds->in_file);
+		close(fds->pipe[1]);
+		fd = dup2(fds->pipe[0], STDIN_FILENO);
+		close(fds->pipe[0]);
+		fd = dup2(fds->out_file, STDOUT_FILENO);
+		close(fds->out_file);
+	}
+}
 
 static char	*create_cmd_path(t_proc *proc, t_pipex_data *data)
 {
 	int		i;
 	char	*cmd_only;
 	char	*cmd_path;
-
-	// TODO
-	// '/'パスネームだからなにもしない
-	// '.'はじまりのときはpwdつけないとだめ
 
 	cmd_only = option_trim(proc->cmd);
 	if (!cmd_only)
@@ -135,7 +90,9 @@ static char	*create_cmd_path(t_proc *proc, t_pipex_data *data)
 		i++;
 	}
 	free(cmd_only);
-	return (NULL);
+	write(2, proc->cmd, ft_strlen(proc->cmd));
+	write(2, ": command not found\n", 21);
+	exit(1);
 }
 
 static char	*option_trim(char *cmd)
