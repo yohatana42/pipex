@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 17:41:45 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/22 17:53:26 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/23 16:58:16 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 static int	validate_infile(char *infile);
 static int	validate_outfile(char *outfile);
 
-int	validate_args(char **argv)
+int	validate_args(char **argv, char **env_path)
 {
 	int	err_flg;
 
@@ -33,7 +33,10 @@ int	validate_args(char **argv)
 		perror(argv[4]);
 	}
 	if (err_flg)
-		return (1);
+	{
+		free_env_path(env_path);
+		exit(1);
+	}
 	return (0);
 }
 

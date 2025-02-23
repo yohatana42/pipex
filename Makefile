@@ -6,7 +6,7 @@
 #    By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/08 14:55:25 by yohatana          #+#    #+#              #
-#    Updated: 2025/02/17 19:12:02 by yohatana         ###   ########.fr        #
+#    Updated: 2025/02/23 17:12:45 by yohatana         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -20,7 +20,9 @@ SRCS		=\
 				get_env_path.c\
 				exec.c\
 				create_struct.c\
-				data_set_to_struct.c
+				data_set_to_struct.c\
+				make_process.c\
+				error_pipex.c
 
 
 # object file name

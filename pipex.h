@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/01/26 15:50:23 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/23 15:23:20 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/23 17:09:17 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,14 +64,14 @@ void			free_env_path(char **env_path);
 
 // exec
 void			exec(t_pipex_data *data, int num, t_fds *fds);
-void			end_exec(t_pipex_data *data);
-void			close_fds(t_fds fds);
+void			end_exec(t_pipex_data *data, t_fds fds);
 
 // error
 void			error_pipex(t_pipex_data *data);
+void			exit_error(char *str);
 
 // validate
-int				validate_args(char **argv);
+int				validate_args(char **argv, char **env_path);
 
 // get_env_path
 char			**get_env_path(char **envp);

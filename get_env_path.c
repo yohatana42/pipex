@@ -6,7 +6,7 @@
 /*   By: yohatana <yohatana@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/01 22:29:27 by yohatana          #+#    #+#             */
-/*   Updated: 2025/02/23 15:24:03 by yohatana         ###   ########.fr       */
+/*   Updated: 2025/02/23 17:12:48 by yohatana         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,16 +29,15 @@ char	**get_env_path(char **envp)
 			break ;
 		i++;
 	}
+	if (envp[i] == NULL)
+		exit_error("env path can not get");
 	temp = ft_strtrim(envp[i], "PATH=");
 	if (!temp)
 		return (NULL);
 	path = ft_split(temp, ':');
-	if (!path)
-	{
-		free(temp);
-		return (NULL);
-	}
 	free(temp);
+	if (!path)
+		return (NULL);
 	env_path = add_slash(path);
 	if (!env_path)
 		free_path(path);
